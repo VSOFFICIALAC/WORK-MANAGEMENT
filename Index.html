@@ -1,10 +1,1064 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Workbench</title><?!= include('Styles'); ?></head><body class="auth-required"><section id="authGate" aria-labelledby="authTitle"><div class="auth-card"><div class="brand">▦ workbench</div><small class="auth-eyebrow">YOUR PERSONAL WORKSPACE</small><h1 id="authTitle">Sign in to Workbench</h1><p id="authIntro">Use your Workbench account to access your tasks and calendar.</p><div id="authNotice" class="auth-notice" role="status" aria-live="polite" hidden></div><form id="authLogin"><label>Email address<input name="email" type="email" autocomplete="username" required maxlength="254"></label><label>Password<input name="password" type="password" autocomplete="current-password" required maxlength="256"></label><button class="primary auth-submit">Sign in</button><button type="button" class="auth-link" id="forgotLink">Forgot password?</button><p class="auth-switch">New to Workbench? <button type="button" class="auth-link" id="showRegister">Create an account</button></p></form><form id="authRegister" hidden><label>Email address<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Create password<input name="password" type="password" autocomplete="new-password" minlength="12" required maxlength="256"><small>Use at least 12 characters.</small></label><button class="primary auth-submit">Create account</button><p class="auth-switch">Already registered? <button type="button" class="auth-link" id="showLogin">Sign in</button></p></form><form id="authVerify" hidden><label>Email address<input name="email" type="email" required maxlength="254"></label><label>Verification code<input name="code" inputmode="numeric" autocomplete="one-time-code" required maxlength="8"></label><button class="primary auth-submit">Verify and continue</button><p class="auth-switch"><button type="button" class="auth-link" id="verifyBack">Back to sign in</button></p></form><form id="authReset" hidden><label>Email address<input name="email" type="email" required maxlength="254"></label><button type="button" class="auth-secondary" id="sendResetCode">Send reset code</button><label id="resetCodeLabel" hidden>Reset code<input name="code" inputmode="numeric" autocomplete="one-time-code" required disabled maxlength="8"></label><label id="resetPasswordLabel" hidden>New password<input name="password" type="password" autocomplete="new-password" minlength="12" required disabled maxlength="256"></label><button class="primary auth-submit" id="finishReset" hidden>Reset password</button><p class="auth-switch"><button type="button" class="auth-link" id="resetBack">Back to sign in</button></p></form><small class="auth-footnote">A verification email is required to create an account. You also need to be signed in to Google to open this Apps Script website.</small></div></section><aside><div class="brand">▦ workbench</div><small>YOUR WORKSPACE</small><button class="nav active" data-view="today">◷ &nbsp; Today</button><button class="nav" data-view="all">▤ &nbsp; All work</button><button class="nav" data-view="matrix">⊞ &nbsp; Priority matrix</button><button class="nav" data-view="ikigai">◉ &nbsp; Ikigai</button><button class="nav" data-view="calendar">▦ &nbsp; Calendar</button><button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">☾ &nbsp; Dark mode</button><small>PROJECTS <button id="addProject">＋</button></small><div id="projects"></div><div id="projectEditor" class="project-editor" hidden><input id="projectName" placeholder="Project name"><button id="saveProject" title="Save">✓</button><button id="cancelProject" title="Cancel">×</button></div><div class="aside-note">✳ Keep priorities clear.<br><small>Match tasks to available time and focus.</small></div></aside><main><header><span>Workspace / <b id="crumb">Today</b></span><span id="date"></span><button id="logout" class="logout-button" type="button">Sign out</button></header><section><div class="hero"><div><small>● WORK OVERVIEW</small><h1 id="title">Plan your work with clarity<span>.</span></h1><p>Plan tasks by the focus and time they require, across any area of life.</p></div><button class="primary" id="add">＋ Add a task</button></div><section id="calendarView" class="calendar-view" hidden><div class="calendar-toolbar"><div><div class="eyebrow">SCHEDULE AND PLAN</div><h2 id="calendarMonth"></h2></div><div class="calendar-actions"><button class="calendar-nav" id="prevMonth" aria-label="Previous month">‹</button><button class="calendar-nav" id="nextMonth" aria-label="Next month">›</button><button class="primary" id="newMeeting">＋ Schedule meeting</button></div></div><div id="meetingFormPanel" class="inline-panel meeting-panel" hidden><form id="meetingForm"><button type="button" class="close" data-close>×</button><small>MEETING DETAILS</small><h2 id="meetingFormTitle">Schedule a meeting</h2><label>Meeting title<input name="title" required maxlength="160" placeholder="Meeting title"></label><div class="row"><label>Date<input type="date" name="date" required></label><label>Start time<input type="time" name="time" required></label><label>Duration<select name="duration"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60" selected>1 hour</option><option value="90">1.5 hours</option><option value="120">2 hours</option></select></label></div><label>Location or meeting link <small>optional</small><input name="location" placeholder="Room, Teams, Meet, or Zoom link"></label><label>Email reminder<select name="reminder"><option value="0">No email reminder</option><option value="5">5 minutes before</option><option value="15" selected>15 minutes before</option><option value="60">1 hour before</option><option value="1440">1 day before</option></select><small class="reminder-note">Workbench emails this reminder to your verified address.</small></label><div class="actions"><button type="button" class="delete" id="deleteMeeting">Delete meeting</button><button type="button" data-close>Cancel</button><button class="primary">Save meeting</button></div></form></div><div class="calendar-grid" id="calendarGrid"></div><div class="calendar-footer"><span>Task and meeting reminders are emailed to your verified address.</span><button class="calendar-link" id="exportCalendar">Download .ics calendar</button></div></section><section id="ikigaiView" class="ikigai-view" hidden><div class="ikigai-heading"><div><small>REFLECT AND PRIORITIZE</small><h2>Ikigai</h2><p>Explore how your tasks connect with what matters to you.</p></div><div class="ikigai-key"><span>◎ What you love</span><span>◇ What you are good at</span><span>✳ What the world needs</span><span>＋ What you can be paid for</span></div></div><div class="ikigai-layout"><div class="ikigai-venn" aria-label="Four overlapping areas of Ikigai"><div class="ikigai-circle circle-love"><b>1</b>What you love</div><div class="ikigai-circle circle-strength"><b>2</b>What you are good at</div><div class="ikigai-circle circle-contribution"><b>3</b>What the world needs</div><div class="ikigai-circle circle-value"><b>4</b>What you can be paid for</div><div class="ikigai-center">IKIGAI</div></div><div class="ikigai-groups"><article><h3>What you love <span id="ikigaiCount1">0</span></h3><div class="ikigai-items" id="ikigaiList1"></div></article><article><h3>Your strengths <span id="ikigaiCount2">0</span></h3><div class="ikigai-items" id="ikigaiList2"></div></article><article><h3>What is needed <span id="ikigaiCount3">0</span></h3><div class="ikigai-items" id="ikigaiList3"></div></article><article><h3>What can be valued <span id="ikigaiCount4">0</span></h3><div class="ikigai-items" id="ikigaiList4"></div></article></div></div><div class="ikigai-intersection"><div><small>SHARED PURPOSE</small><h3>Tasks across all four areas</h3><p>Use these prompts for reflection; you decide what is meaningful.</p></div><div class="ikigai-center-tasks" id="ikigaiCenterTasks"></div></div><p class="ikigai-tip">Tag tasks from their details to see how they relate to each area.</p></section><div class="stats"><div><small>ON YOUR LIST</small><b id="openCount">0</b><p>open tasks</p></div><div><small>SHORT TASKS</small><b id="quickCount">0</b><p>30 minutes or less, minimal focus</p></div><div><small>HIGH FOCUS</small><b id="deepCount">0</b><p>requires sustained concentration</p></div><div><small>DONE</small><b id="doneCount">0</b><p>tasks checked off</p></div></div><div class="connect"><div><b>Workbench account</b><p>Your tasks are stored in a private Workbench sheet. Reminders are sent to your verified email address.</p></div><div><button class="connect-btn" id="email">Workbench account</button><button class="connect-btn" id="importGmail" hidden>↓ Import reminders</button><button class="connect-btn" id="drive">▤ Open task sheet</button></div></div><div class="matrix-intro"><div><h2>Task priority matrix</h2><p>Select tasks by estimated duration and concentration required.</p></div><div class="matrix-legend"><span><i class="legend-dot easy"></i>Minimal focus</span><span><i class="legend-dot deep"></i>High focus</span></div></div><div class="matrix-shell"><div class="y-axis"><span>HIGH<br>CONCENTRATION</span><span>MODERATE<br>CONCENTRATION</span><span>LIGHT<br>CONCENTRATION</span><span>ROUTINE</span></div><div class="matrix-main"><div class="matrix-x-labels"><span>≤ 30 MIN</span><span>30–60 MIN</span><span>1–2 HOURS</span><span>2+ HOURS</span></div><div class="matrix-grid" id="matrixGrid"></div></div></div><div class="heading"><div><h2>Your work</h2><p>A mix of focus, follow-through, and small wins.</p></div><input id="search" placeholder="⌕  Find a task"><select id="sort"><option value="priority">Priority</option><option value="time">Time needed</option><option value="newest">Recently added</option></select></div><div class="filters"><button class="selected" data-filter="all">Everything</button><button data-filter="focus">High focus</button><button data-filter="steady">Steady pace</button><button data-filter="quick">Quick wins</button><span>Estimated task duration</span></div><div id="tasks"></div><div id="empty" hidden><h3>No tasks to display</h3><p>Add a task and estimate its duration and concentration level.</p><button class="primary" id="first">＋ Add your first task</button></div><footer>Progress adds up. <span>A clear view of your commitments ✳</span><a href="?page=privacy" target="_blank">Privacy</a></footer></section></main><section id="taskDialog" class="inline-panel task-panel" hidden><form id="taskForm"><button type="button" class="close" data-close>×</button><small>TASK DETAILS</small><h2 id="formTitle">Add a task</h2><label>What needs doing?<input name="name" required placeholder="Describe the task"></label><label>Project<select name="project" id="projectSelect"></select></label><div class="row"><label>Focus required<select name="effort"><option value="none">Minimal — repetitive</option><option value="low">Light — routine</option><option value="medium" selected>Moderate — focused attention</option><option value="high">High — sustained concentration</option></select></label><label>Estimated duration<select name="time"><option value="15">15 minutes</option><option value="30" selected>30 minutes</option><option value="60">1 hour</option><option value="120">2 hours</option><option value="240">Half a day</option></select></label></div><fieldset class="ikigai-checks"><legend>Relates to <small>optional — choose any</small></legend><label><input type="checkbox" name="alignment" value="love"> What I love</label><label><input type="checkbox" name="alignment" value="strength"> What I am good at</label><label><input type="checkbox" name="alignment" value="need"> What the world needs</label><label><input type="checkbox" name="alignment" value="value"> What I can be paid for</label></fieldset><div class="row"><label>Due date <small>optional</small><input type="date" name="due"></label><label>Source <small>optional</small><select name="source"><option value="">Manual entry</option><option>Email</option><option>Drive</option></select></label></div><label>Email reminder time <small>optional</small><input type="datetime-local" name="reminderAt"><small class="reminder-note">Sent from the Workbench account to your verified address.</small></label><div class="actions"><button type="button" class="delete" id="delete">Delete task</button><button type="button" data-close>Cancel</button><button class="primary">Save task</button></div></form></section><section id="info" class="inline-panel" hidden><button type="button" class="close" data-close>×</button><div class="info-icon" id="infoIcon">✉</div><small>INTEGRATION PREVIEW</small><h2 id="infoTitle">Connect your email</h2><p>Link your account to turn messages into tasks and keep the context close by. Secure sign-in will be handled by your provider; your credentials are never stored here.</p><button class="primary" data-close>Close</button><small class="footnote">Email and Drive sign-in need an app server and OAuth setup. This preview saves your task list on this device.</small></section><section id="gmailInbox" class="inline-panel gmail-panel" hidden><button type="button" class="close" data-close>×</button><small>GMAIL</small><h2>Reminder emails</h2><p class="inbox-help">Gmail inbox scanning is not enabled. Use the task reminder field or schedule a Calendar meeting.</p><div id="gmailMessages">Email import is not available in this version.</div></section><button id="disconnect" hidden type="button"></button><div id="toast"></div><?!= include('Bridge'); ?><?!= include('Client'); ?><?!= include('PostClient'); ?></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workbench · task & focus</title>
+  <style>
+    /* ---------- RESET & GLOBAL ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-soft: #f1f5f9;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-soft: #dbeafe;
+      --accent-hover: #2563eb;
+      --danger: #ef4444;
+      --success: #10b981;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.03);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.02);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
 
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      min-height: 100vh;
+    }
 
+    /* ---------- TYPOGRAPHY ---------- */
+    h1, h2, h3 {
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    h1 { font-size: 2rem; line-height: 1.2; }
+    h2 { font-size: 1.25rem; }
+    h3 { font-size: 1.1rem; }
+    small { font-size: 0.75rem; letter-spacing: 0.02em; }
+    .eyebrow { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; }
 
+    /* ---------- SIDEBAR ---------- */
+    aside {
+      width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 1.75rem 1rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex-shrink: 0;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      overflow-y: auto;
+    }
 
+    .brand {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 8px;
+    }
 
+    .brand::before {
+      content: "▦";
+      font-size: 1.4rem;
+      color: var(--accent);
+    }
 
+    aside > small {
+      display: block;
+      padding: 0 8px;
+      margin-top: -0.5rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
 
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
 
+    .nav:hover {
+      background: var(--surface-soft);
+      color: var(--text);
+    }
+
+    .nav.active {
+      background: var(--accent-soft);
+      color: var(--accent-hover);
+      font-weight: 600;
+    }
+
+    #addProject {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-left: 4px;
+      padding: 0;
+      line-height: 1;
+      transition: 0.15s;
+    }
+
+    #addProject:hover {
+      background: var(--surface-soft);
+      border-color: var(--text-muted);
+    }
+
+    #projects {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin: 0.25rem 0 0.5rem;
+    }
+
+    #projects .project-item {
+      padding: 0.45rem 0.75rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    #projects .project-item:hover {
+      background: var(--surface-soft);
+    }
+
+    .project-editor {
+      display: flex;
+      gap: 4px;
+      padding: 0.25rem 0.25rem;
+      background: var(--surface-soft);
+      border-radius: var(--radius-sm);
+    }
+
+    .project-editor input {
+      flex: 1;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      font-family: var(--font);
+      font-size: 0.8rem;
+      background: var(--surface);
+    }
+
+    .project-editor button {
+      width: 28px;
+      border: none;
+      background: var(--surface);
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .project-editor button:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .aside-note {
+      margin-top: auto;
+      padding: 1rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      border-top: 1px solid var(--border);
+    }
+
+    .aside-note small {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    /* ---------- MAIN ---------- */
+    main {
+      flex: 1;
+      padding: 2rem 2.5rem 3rem;
+      max-width: 1400px;
+      overflow-x: auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    #crumb {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    #date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ---------- HERO ---------- */
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 2rem;
+      gap: 2rem;
+    }
+
+    .hero small {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+    }
+
+    .hero p {
+      color: var(--text-secondary);
+      margin-top: 0.35rem;
+      font-size: 0.95rem;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 1.25rem;
+      font-family: var(--font);
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      box-shadow: var(--shadow-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .primary:hover {
+      background: var(--accent-hover);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* ---------- CALENDAR VIEW ---------- */
+    .calendar-view {
+      margin-bottom: 2rem;
+    }
+
+    .calendar-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+    }
+
+    .calendar-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .calendar-nav {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      width: 34px;
+      height: 34px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-nav:hover {
+      background: var(--surface-soft);
+      border-color: var(--text-muted);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+
+    .calendar-day {
+      background: var(--surface);
+      min-height: 90px;
+      padding: 6px 8px;
+      font-size: 0.8rem;
+    }
+
+    .calendar-day-header {
+      background: var(--surface-soft);
+      min-height: auto;
+      padding: 8px;
+      font-weight: 600;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .calendar-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .calendar-link {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.8rem;
+      text-decoration: underline;
+    }
+
+    /* ---------- STATS ---------- */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .stats > div {
+      background: var(--surface);
+      padding: 1.25rem 1.25rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .stats small {
+      display: block;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .stats b {
+      font-size: 1.8rem;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+    }
+
+    .stats p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ---------- CONNECT ---------- */
+    .connect {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .connect b {
+      font-size: 0.95rem;
+    }
+
+    .connect p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .connect-btn {
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-xs);
+      font-family: var(--font);
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: 0.15s;
+      white-space: nowrap;
+    }
+
+    .connect-btn:hover {
+      background: var(--surface);
+      border-color: var(--text-muted);
+    }
+
+    .connect div:last-child {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ---------- MATRIX ---------- */
+    .matrix-intro {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 1rem;
+    }
+
+    .matrix-intro h2 {
+      margin-bottom: 0.2rem;
+    }
+
+    .matrix-intro p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .matrix-legend {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+    }
+
+    .legend-dot.easy { background: #a7d3f0; }
+    .legend-dot.deep { background: #6d8fc6; }
+
+    .matrix-shell {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+      background: var(--surface);
+      padding: 1.25rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .y-axis {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-align: right;
+      padding-right: 8px;
+      min-width: 60px;
+      line-height: 1.3;
+    }
+
+    .matrix-main {
+      flex: 1;
+    }
+
+    .matrix-x-labels {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 8px;
+      gap: 2px;
+    }
+
+    .matrix-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      background: var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .matrix-cell {
+      background: var(--surface);
+      min-height: 65px;
+      padding: 6px;
+      font-size: 0.7rem;
+      transition: background 0.15s;
+    }
+
+    .matrix-cell.easy { background: #f0f7fe; }
+    .matrix-cell.medium { background: #e6eef9; }
+    .matrix-cell.deep { background: #d8e4f4; }
+
+    /* ---------- HEADING / TASKS ---------- */
+    .heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 2rem 0 1rem;
+      gap: 2rem;
+    }
+
+    .heading h2 {
+      margin-bottom: 0.2rem;
+    }
+
+    .heading p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .heading input, .heading select {
+      padding: 0.55rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font);
+      font-size: 0.85rem;
+      background: var(--surface);
+      color: var(--text);
+      width: 200px;
+    }
+
+    .heading input:focus, .heading select:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .heading input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .filters {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .filters button {
+      padding: 0.35rem 0.9rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-family: var(--font);
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    .filters button:hover {
+      background: var(--surface-soft);
+    }
+
+    .filters button.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+
+    .filters span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    #tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px dashed var(--border);
+    }
+
+    #empty h3 {
+      margin-bottom: 0.35rem;
+    }
+
+    #empty p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ---------- INLINE PANELS (MODALS) ---------- */
+    .inline-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);
+      padding: 2rem;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      z-index: 1000;
+      border: 1px solid var(--border);
+    }
+
+    .inline-panel .close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+
+    .inline-panel .close:hover {
+      color: var(--text);
+    }
+
+    .inline-panel form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .inline-panel label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .inline-panel input, .inline-panel select {
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .inline-panel input:focus, .inline-panel select:focus {
+      outline: 2px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .inline-panel .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .inline-panel .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 0.5rem;
+    }
+
+    .inline-panel .actions button {
+      padding: 0.55rem 1.1rem;
+      border-radius: var(--radius-xs);
+      font-family: var(--font);
+      font-weight: 500;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-secondary);
+      transition: 0.15s;
+    }
+
+    .inline-panel .actions button:hover {
+      background: var(--surface-soft);
+    }
+
+    .inline-panel .actions .primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .inline-panel .actions .primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .inline-panel .actions .delete {
+      color: var(--danger);
+      border-color: #fecaca;
+      margin-right: auto;
+    }
+
+    .inline-panel .actions .delete:hover {
+      background: #fef2f2;
+    }
+
+    .reminder-note {
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    .info-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .gmail-panel p.inbox-help {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    #gmailMessages {
+      background: var(--surface-soft);
+      padding: 1rem;
+      border-radius: var(--radius-xs);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .footnote {
+      display: block;
+      margin-top: 1rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 2000;
+    }
+
+    #toast.show {
+      opacity: 1;
+    }
+
+    /* responsive */
+    @media (max-width: 1100px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .matrix-shell { flex-direction: column; }
+      .y-axis { flex-direction: row; min-width: auto; justify-content: space-between; text-align: center; padding-right: 0; margin-bottom: 4px; }
+      .matrix-x-labels { font-size: 0.6rem; }
+    }
+
+    @media (max-width: 900px) {
+      aside { width: 200px; padding: 1.25rem 0.75rem; }
+      main { padding: 1.5rem 1.25rem; }
+      .hero { flex-direction: column; align-items: flex-start; }
+      .connect { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .heading { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .heading input, .heading select { width: 100%; }
+    }
+
+    @media (max-width: 700px) {
+      body { flex-direction: column; }
+      aside { width: 100%; height: auto; position: static; flex-direction: row; flex-wrap: wrap; gap: 4px; padding: 0.75rem 1rem; align-items: center; }
+      .brand { font-size: 1rem; }
+      aside > small { display: none; }
+      .nav { width: auto; padding: 0.4rem 0.7rem; font-size: 0.8rem; }
+      #projects, .aside-note, .project-editor { display: none; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .inline-panel .row { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="brand">workbench</div>
+    <small>YOUR WORKSPACE</small>
+    <button class="nav active" data-view="today">◷ &nbsp; Today</button>
+    <button class="nav" data-view="all">▤ &nbsp; All work</button>
+    <button class="nav" data-view="matrix">⊞ &nbsp; Priority matrix</button>
+    <button class="nav" data-view="calendar">▦ &nbsp; Calendar</button>
+    <small>PROJECTS <button id="addProject">＋</button></small>
+    <div id="projects">
+      <div class="project-item">Client work</div>
+      <div class="project-item">Personal</div>
+    </div>
+    <div id="projectEditor" class="project-editor" hidden>
+      <input id="projectName" placeholder="Project name">
+      <button id="saveProject" title="Save">✓</button>
+      <button id="cancelProject" title="Cancel">×</button>
+    </div>
+    <div class="aside-note">
+      ✳ Keep priorities clear.<br>
+      <small>Match tasks to available time and focus.</small>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <header>
+      <span>Workspace / <b id="crumb">Today</b></span>
+      <span id="date">Mon, 14 Apr 2025</span>
+    </header>
+
+    <section>
+      <!-- HERO -->
+      <div class="hero">
+        <div>
+          <small>● WORK OVERVIEW</small>
+          <h1 id="title">Plan your work with clarity<span>.</span></h1>
+          <p>Prioritize tasks by the focus and time they require.</p>
+        </div>
+        <button class="primary" id="add">＋ Add a task</button>
+      </div>
+
+      <!-- CALENDAR VIEW (hidden by default) -->
+      <section id="calendarView" class="calendar-view" hidden>
+        <div class="calendar-toolbar">
+          <div>
+            <div class="eyebrow">SCHEDULE AND PLAN</div>
+            <h2 id="calendarMonth">April 2025</h2>
+          </div>
+          <div class="calendar-actions">
+            <button class="calendar-nav" id="prevMonth" aria-label="Previous month">‹</button>
+            <button class="calendar-nav" id="nextMonth" aria-label="Next month">›</button>
+            <button class="primary" id="newMeeting">＋ Schedule meeting</button>
+          </div>
+        </div>
+        <div id="meetingFormPanel" class="inline-panel meeting-panel" hidden>
+          <form id="meetingForm">
+            <button type="button" class="close" data-close>×</button>
+            <small>MEETING DETAILS</small>
+            <h2 id="meetingFormTitle">Schedule a meeting</h2>
+            <label>Meeting title<input name="title" required maxlength="160" placeholder="e.g. PCB vendor review"></label>
+            <div class="row">
+              <label>Date<input type="date" name="date" required></label>
+              <label>Start time<input type="time" name="time" required></label>
+              <label>Duration<select name="duration">
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="60" selected>1 hour</option>
+                <option value="90">1.5 hours</option>
+                <option value="120">2 hours</option>
+              </select></label>
+            </div>
+            <label>Location or meeting link <small>optional</small><input name="location" placeholder="Room, Teams, Meet, or Zoom link"></label>
+            <label>Email reminder<select name="reminder">
+              <option value="0">No email reminder</option>
+              <option value="5">5 minutes before</option>
+              <option value="15" selected>15 minutes before</option>
+              <option value="60">1 hour before</option>
+              <option value="1440">1 day before</option>
+            </select><small class="reminder-note">Google Calendar sends this reminder to your account.</small></label>
+            <div class="actions">
+              <button type="button" class="delete" id="deleteMeeting">Delete meeting</button>
+              <button type="button" data-close>Cancel</button>
+              <button class="primary">Save meeting</button>
+            </div>
+          </form>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div class="calendar-footer">
+          <span>Meeting email reminders are managed by Google Calendar.</span>
+          <button class="calendar-link" id="exportCalendar">Download .ics calendar</button>
+        </div>
+      </section>
+
+      <!-- STATS -->
+      <div class="stats">
+        <div><small>ON YOUR LIST</small><b id="openCount">0</b><p>open tasks</p></div>
+        <div><small>SHORT TASKS</small><b id="quickCount">0</b><p>30 minutes or less, minimal focus</p></div>
+        <div><small>HIGH FOCUS</small><b id="deepCount">0</b><p>requires sustained concentration</p></div>
+        <div><small>DONE</small><b id="doneCount">0</b><p>tasks checked off</p></div>
+      </div>
+
+      <!-- CONNECT -->
+      <div class="connect">
+        <div>
+          <b>Google workspace sync</b>
+          <p>Tasks are stored in a private Google Sheet. Meetings and reminder emails use Google services.</p>
+        </div>
+        <div>
+          <button class="connect-btn" id="email">Authorize Google account</button>
+          <button class="connect-btn" id="importGmail" hidden>↓ Import reminders</button>
+          <button class="connect-btn" id="drive">▤ Open task sheet</button>
+        </div>
+      </div>
+
+      <!-- MATRIX INTRO -->
+      <div class="matrix-intro">
+        <div>
+          <h2>Task priority matrix</h2>
+          <p>Select tasks by estimated duration and concentration required.</p>
+        </div>
+        <div class="matrix-legend">
+          <span><i class="legend-dot easy"></i>Minimal focus</span>
+          <span><i class="legend-dot deep"></i>High focus</span>
+        </div>
+      </div>
+
+      <!-- MATRIX SHELL -->
+      <div class="matrix-shell">
+        <div class="y-axis">
+          <span>HIGH<br>CONCENTRATION</span>
+          <span>MODERATE<br>CONCENTRATION</span>
+          <span>LIGHT<br>CONCENTRATION</span>
+          <span>ROUTINE</span>
+        </div>
+        <div class="matrix-main">
+          <div class="matrix-x-labels">
+            <span>≤ 30 MIN</span><span>30–60 MIN</span><span>1–2 HOURS</span><span>2+ HOURS</span>
+          </div>
+          <div class="matrix-grid" id="matrixGrid">
+            <div class="matrix-cell easy"></div>
+            <div class="matrix-cell medium"></div>
+            <div class="matrix-cell medium"></div>
+            <div class="matrix-cell deep"></div>
+            <div class="matrix-cell easy"></div>
+            <div class="matrix-cell medium"></div>
+            <div class="matrix-cell medium"></div>
+            <div class="matrix-cell deep"></div>
+            <div class="matrix-cell easy"></div>
+            <div class="matrix-cell medium"></div>
+            <div class="matrix-cell medium"></div>
+            <div class="matrix-cell deep"></div>
+            <div class="matrix-cell easy"></div>
+            <div class="matrix-cell medium"></div>
+            <div class="matrix-cell medium"></div>
+            <div class="matrix-cell deep"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEADING / SEARCH -->
+      <div class="heading">
+        <div>
+          <h2>Your work</h2>
+          <p>A mix of focus, follow-through, and small wins.</p>
+        </div>
+        <input id="search" placeholder="⌕  Find a task">
+        <select id="sort">
+          <option value="priority">Priority</option>
+          <option value="time">Time needed</option>
+          <option value="newest">Recently added</option>
+        </select>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filters">
+        <button class="selected" data-filter="all">Everything</button>
+        <button data-filter="focus">High focus</button>
+        <button data-filter="steady">Steady pace</button>
+        <button data-filter="quick">Quick wins</button>
+        <span>Estimated task duration</span>
+      </div>
+
+      <!-- TASK LIST -->
+      <div id="tasks">
+        <div style="background:var(--surface);padding:1.25rem 1.5rem;border-radius:var(--radius);border:1px solid var(--border);display:flex;align-items:center;gap:1rem;box-shadow:var(--shadow-sm);">
+          <input type="checkbox" style="width:18px;height:18px;accent-color:var(--accent);">
+          <div style="flex:1;">
+            <div style="font-weight:500;">Compare PCB assembly vendors</div>
+            <div style="display:flex;gap:1rem;font-size:0.75rem;color:var(--text-muted);margin-top:4px;">
+              <span>⚡ High focus</span><span>⏱ 2 hours</span><span>📁 Client work</span>
+            </div>
+          </div>
+          <span style
