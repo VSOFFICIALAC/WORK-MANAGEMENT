@@ -1,0 +1,25 @@
+<script>
+(function () {
+  if (!(window.google && google.script && google.script.run)) return;
+  window.wbSheetUrl = '';
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = function (input, options) {
+    const url = typeof input === 'string' ? input : input.url;
+    if (!url || !url.startsWith('/api/') && !url.startsWith('/auth/')) return nativeFetch(input, options);
+    const path = url.split('?')[0];
+    const method = (options && options.method || 'GET').toUpperCase();
+    let payload = {};
+    try { payload = options && options.body ? JSON.parse(options.body) : {}; } catch (error) {}
+    payload.token = payload.token || sessionStorage.getItem('wb.session') || '';
+    return new Promise(resolve => {
+      google.script.run
+        .withSuccessHandler(data => {
+          if (path === '/api/status' && data && data.sheetUrl) window.wbSheetUrl = data.sheetUrl;
+          resolve({ ok: true, status: 200, json: async () => data });
+        })
+        .withFailureHandler(error => { const message = error && error.message || 'Google Apps Script request failed.'; if (/session expired|please sign in/i.test(message)) { sessionStorage.removeItem('wb.session'); setTimeout(() => location.reload(), 50); } resolve({ ok: false, status: 500, json: async () => ({ error: message }) }); })
+        .apiRequest(path, method, payload);
+    });
+  };
+})();
+</script>

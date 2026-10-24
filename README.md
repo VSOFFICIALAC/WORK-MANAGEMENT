@@ -1,20 +1,25 @@
-# Workbench — Google Apps Script edition
+# Workbench — Google Apps Script app
 
-A Google-only task planner for students and professionals across any field. Features include the 4×4 focus-and-duration matrix, Ikigai reflection view, customizable projects, meeting calendar, light and dark themes, task animations, and email reminders. There are no preloaded domain-specific tasks or projects.
+> **This website is intended to run as a Google Apps Script web app.** The files in this folder are Apps Script project source files, not a standalone website. Do not open `Index.html` directly from File Explorer or use this folder as a GitHub Pages site. Its template includes and server calls are processed by Apps Script; without them, the page will appear unstyled and its features will not work.
 
-## Accounts and data
+## What it does
 
-Users register with an email address and password, verify the email address with a one-time code, and sign in to Workbench. Passwords are stored as salted PBKDF2-HMAC-SHA256 hashes. Sessions expire and are checked on each data request. Registration and password reset are rate-limited. Each account gets a separate spreadsheet owned by the app operator; the sheet is not shared with the user. The app sends verification and reminder emails from the operator's Google account. It does not request access to a user's Gmail, Drive, or Calendar. Existing data from the earlier Google-authorized version is not automatically imported into new Workbench accounts.
+Workbench helps students and professionals organize tasks by focus and duration, use a 4×4 priority matrix and Ikigai view, manage projects, and schedule meetings. It includes light and dark themes plus task and meeting email reminders.
 
-Apps Script access is a separate outer gate: the web app is configured for **Anyone with a Google account**, so visitors must be signed in to Google to open the page. This does not ask them to authorize the app to read their Google data.
+## Run it in Google Apps Script
 
-## Deploy
+1. Go to [script.google.com](https://script.google.com/) and create a project.
+2. Copy `Code.gs` into a script file named `Code`. Create HTML files named `Index`, `Styles`, `Bridge`, `Client`, `PostClient`, and `Privacy`, and copy in the matching source files from this folder.
+3. In Project Settings, enable the `appsscript.json` manifest and copy in this folder's manifest.
+4. Deploy the project as a web app. The manifest is configured to run as the deployer and require visitors to be signed in to a Google account. Visitors then use their separate Workbench email and password.
+5. Open the deployed Apps Script URL to use the app.
 
-1. Open [script.google.com](https://script.google.com/) with the Google account that will own the app. Create a project and add `Code.gs` plus HTML files named `Index`, `Styles`, `Bridge`, `Client`, `PostClient`, and `Privacy`. Enable the `appsscript.json` manifest in Project Settings and copy this folder's manifest into the project.
-2. Set the project time zone to **Asia/Kolkata**.
-3. Deploy as a web app with **Execute as: Me** and **Who has access: Anyone with a Google account**. The operator must authorize Google Sheets, Drive file creation, email sending, and time triggers for the app. Re-deploy a new version after changes.
-4. Open the deployment URL. Users sign in to Google to open the page, then create or use their separate Workbench credentials.
+The app stores each Workbench account's data in a separate spreadsheet in the deployer's Drive. It sends email verification and reminders from the deployer's Google account. Users do not authorize access to their own Drive, Gmail, or Calendar.
 
-## Reminders and limits
+## GitHub
 
-A five-minute Apps Script trigger checks each user's private sheet and sends due task and meeting reminders to their verified address. Timing can vary, and Google quotas apply. The owner-operated script can send mail only within the owner's service quota. This project does not scan Gmail or add meetings to a user's personal Google Calendar.
+GitHub can store and version this source code. GitHub Pages can only serve a static front end; it cannot run this Apps Script backend, account storage, or email reminders. Keep this folder as source for the Apps Script project and use the Apps Script deployment URL as the working website.
+
+## Important
+
+This folder contains the updated Workbench account and interface source. It has not yet been tested or deployed to the current live website. Existing user data from the earlier Google-authorized version is not automatically imported.
