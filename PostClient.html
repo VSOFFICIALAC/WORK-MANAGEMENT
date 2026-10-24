@@ -1,0 +1,94 @@
+<script>
+(function () {
+  const email = document.querySelector('#email');
+  if (email) {
+    email.onclick = () => {
+      google.script.run
+        .withSuccessHandler(status => {
+          window.wbSheetUrl = status.sheetUrl || '';
+          setGmailStatus(Boolean(status.connected), status.email || 'Google account');
+          toast('Google account is ready.');
+        })
+        .withFailureHandler(() => toast('Authorize Google access, then reload the workspace.'))
+        .apiRequest('/api/status', 'GET', {});
+    };
+  }
+  const drive = document.querySelector('#drive');
+  if (drive) drive.onclick = () => {
+    if (window.wbSheetUrl) window.open(window.wbSheetUrl, '_blank', 'noopener');
+    else toast('Authorize Google access, then reload the workspace.');
+  };
+  const disconnect = document.querySelector('#disconnect');
+  if (disconnect) { disconnect.hidden = true; disconnect.onclick = null; }
+  const inbox = document.querySelector('#gmailInbox');
+  if (inbox) inbox.hidden = true;
+})();
+</script><script>
+(function(){
+  const $=s=>document.querySelector(s);
+  const themeKey='wb.theme';
+  function setTheme(value){document.documentElement.dataset.theme=value;localStorage.setItem(themeKey,value);const b=$('#themeToggle');if(b){const dark=value==='dark';b.textContent=dark?'☀  Light mode':'☾  Dark mode';b.setAttribute('aria-pressed',String(dark))}}
+  setTheme(localStorage.getItem(themeKey)==='dark'?'dark':'light');
+  $('#themeToggle')?.addEventListener('click',()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark'));
+
+  const originalOpenForm=openForm;
+  openForm=function(task){originalOpenForm(task);const chosen=Array.isArray(task?.alignment)?task.alignment:[];document.querySelectorAll('#taskForm [name="alignment"]').forEach(box=>box.checked=chosen.includes(box.value))};
+  const originalSave=save;
+  save=function(){const panel=$('#taskDialog');if(panel&&!panel.hidden){const target=editing?tasks.find(t=>String(t.id)===String(editing)):tasks[0];if(target)target.alignment=Array.from(document.querySelectorAll('#taskForm [name="alignment"]:checked')).map(box=>box.value)}return originalSave()};
+
+  function drawIkigai(){
+    const keys=['love','strength','need','value'];
+    keys.forEach((key,index)=>{const list=$('#ikigaiList'+(index+1)),count=$('#ikigaiCount'+(index+1));if(!list||!count)return;const matches=tasks.filter(task=>Array.isArray(task.alignment)&&task.alignment.includes(key));count.textContent=matches.length;list.innerHTML=matches.length?matches.slice(0,8).map(task=>'<span>'+esc(task.name)+'</span>').join(''):'<span class="muted">No tasks tagged yet</span>'});
+    const center=$('#ikigaiCenterTasks');if(center){const matches=tasks.filter(task=>keys.every(key=>Array.isArray(task.alignment)&&task.alignment.includes(key)));center.innerHTML=matches.length?matches.map(task=>'<span>'+esc(task.name)+'</span>').join(''):'<span class="muted">No tasks across all four areas yet</span>'}
+  }
+  const originalRender=render;
+  render=function(){originalRender();drawIkigai()};
+
+  document.querySelectorAll('.nav').forEach(button=>button.addEventListener('click',()=>{
+    const active=button.dataset.view==='ikigai';document.body.classList.toggle('ikigai-mode',active);$('#ikigaiView').hidden=!active;
+    if(active){document.body.classList.remove('calendar-mode');$('#calendarView').hidden=true;$('#meetingFormPanel').hidden=true;$('#crumb').textContent='Ikigai';$('#title').innerHTML='Find meaningful connections<span>.</span>';$('.hero p').textContent='Reflect on how your work connects to your interests, strengths, contribution, and value.';drawIkigai()}
+    else if(button.dataset.view==='calendar'){document.body.classList.remove('ikigai-mode');$('#ikigaiView').hidden=true}
+    else{document.body.classList.remove('ikigai-mode');$('#ikigaiView').hidden=true}
+  }));
+  render();
+})();
+</script>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s), tokenKey='wb.session';
+  const forms=['authLogin','authRegister','authVerify','authReset'];
+  function notice(message,error){const box=$('#authNotice');box.textContent=message||'';box.hidden=!message;box.classList.toggle('error',Boolean(error))}
+  function showForm(name,title,intro){forms.forEach(id=>$('#'+id).hidden=id!==name);$('#authTitle').textContent=title;$('#authIntro').textContent=intro;notice('')}
+  async function request(path,data,method){const response=await fetch(path,{method:method||'POST',headers:{'Content-Type':'application/json'},body:method==='GET'?undefined:JSON.stringify(data||{})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Could not complete the request.');return result}
+  async function finishSignIn(result){sessionStorage.setItem(tokenKey,result.token);location.reload()}
+
+  // Replace the old Google-connect controls with the signed-in Workbench account state.
+  setGmailStatus=function(connected,email){gmailConnected=Boolean(connected);const button=$('#email');if(button){button.textContent=connected?'✓ Workbench account':'Workbench account';button.classList.toggle('connected',Boolean(connected));button.disabled=true;button.onclick=null}const drive=$('#drive');if(drive)drive.hidden=true;const importButton=$('#importGmail');if(importButton)importButton.hidden=true;const disconnect=$('#disconnect');if(disconnect)disconnect.hidden=true};
+  syncWithServer=async function(){
+    const statusResponse=await fetch('/api/status');const status=await statusResponse.json();if(!statusResponse.ok)throw new Error(status.error||'Could not load your workspace.');
+    backendAvailable=true;googleConfigured=true;activeAccount=status.email;localStorage.setItem('wb.ownerEmail',status.email);setGmailStatus(true,status.email);
+    const responses=await Promise.all([fetch('/api/tasks'),fetch('/api/projects'),fetch('/api/meetings')]);
+    for(const r of responses)if(!r.ok)throw new Error('Could not load your workspace data.');
+    [tasks,projects,meetings]=await Promise.all(responses.map(r=>r.json()));
+    localStorage.setItem(scopedKey('wb.tasks'),JSON.stringify(tasks));localStorage.setItem(scopedKey('wb.projects'),JSON.stringify(projects));localStorage.setItem(scopedKey('wb.meetings'),JSON.stringify(meetings));
+    render();renderCalendar();
+  };
+
+  const token=sessionStorage.getItem(tokenKey);
+  if(!token){document.body.classList.add('auth-required');showForm('authLogin','Sign in to Workbench','Use your Workbench account to access your tasks and calendar.')}
+  else request('/auth/me',{},'GET').then(profile=>{document.body.classList.remove('auth-required');showForm('authLogin','Sign in to Workbench','Use your Workbench account to access your tasks and calendar.');setGmailStatus(true,profile.email);return syncWithServer()}).catch(()=>{sessionStorage.removeItem(tokenKey);document.body.classList.add('auth-required');showForm('authLogin','Sign in to Workbench','Use your Workbench account to access your tasks and calendar.')});
+
+  $('#showRegister').onclick=()=>showForm('authRegister','Create your account','Verify your email address to start a private Workbench workspace.');
+  $('#showLogin').onclick=()=>showForm('authLogin','Sign in to Workbench','Use your Workbench account to access your tasks and calendar.');
+  $('#verifyBack').onclick=()=>showForm('authLogin','Sign in to Workbench','Use your Workbench account to access your tasks and calendar.');
+  $('#resetBack').onclick=()=>showForm('authLogin','Sign in to Workbench','Use your Workbench account to access your tasks and calendar.');
+  $('#forgotLink').onclick=()=>{showForm('authReset','Reset your password','Request a one-time code sent to your registered email.');$('#resetCodeLabel').hidden=true;$('#resetPasswordLabel').hidden=true;$('#finishReset').hidden=true;$('#sendResetCode').hidden=false};
+  $('#authLogin').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,b=f.querySelector('.auth-submit');b.disabled=true;b.textContent='Signing in…';try{await finishSignIn(await request('/auth/login',{email:f.elements.email.value,password:f.elements.password.value}))}catch(error){notice(error.message,true)}finally{b.disabled=false;b.textContent='Sign in'}};
+  $('#authRegister').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,b=f.querySelector('.auth-submit');b.disabled=true;b.textContent='Sending code…';try{const result=await request('/auth/register',{email:f.elements.email.value,password:f.elements.password.value});$('#authVerify').elements.email.value=f.elements.email.value.trim().toLowerCase();showForm('authVerify','Verify your email','Enter the eight-digit code emailed to you. It expires in 15 minutes.');notice(result.message)}catch(error){notice(error.message,true)}finally{b.disabled=false;b.textContent='Create account'}};
+  $('#authVerify').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,b=f.querySelector('.auth-submit');b.disabled=true;b.textContent='Verifying…';try{await finishSignIn(await request('/auth/verify',{email:f.elements.email.value,code:f.elements.code.value}))}catch(error){notice(error.message,true)}finally{b.disabled=false;b.textContent='Verify and continue'}};
+  $('#sendResetCode').onclick=async()=>{try{const email=$('#authReset').elements.email.value;const result=await request('/auth/request-reset',{email});$('#resetCodeLabel').hidden=false;$('#resetPasswordLabel').hidden=false;$('#authReset').elements.code.disabled=false;$('#authReset').elements.password.disabled=false;$('#finishReset').hidden=false;$('#sendResetCode').hidden=true;notice(result.message)}catch(error){notice(error.message,true)}};
+  $('#authReset').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,b=$('#finishReset');b.disabled=true;b.textContent='Updating…';try{await finishSignIn(await request('/auth/reset',{email:f.elements.email.value,code:f.elements.code.value,password:f.elements.password.value}))}catch(error){notice(error.message,true)}finally{b.disabled=false;b.textContent='Reset password'}};
+  $('#logout').onclick=async()=>{try{await request('/auth/logout',{token:sessionStorage.getItem(tokenKey)})}catch(error){}sessionStorage.removeItem(tokenKey);location.reload()};
+})();
+</script>
