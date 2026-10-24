@@ -1,5 +1,8 @@
 # Workbench — Google Apps Script app
 
+[▶ Open Workbench](https://script.google.com/macros/s/AKfycbzt_rfijUWRQviHb8E38eC7j5PvhcO-GQ6Qss10eNgLJacOdeF51BN_ps5XLNN575vnzg/exec)
+
+
 > **This website is intended to run as a Google Apps Script web app.** The files in this folder are Apps Script project source files, not a standalone website. Do not open `Index.html` directly from File Explorer or use this folder as a GitHub Pages site. Its template includes and server calls are processed by Apps Script; without them, the page will appear unstyled and its features will not work.
 
 ## What it does
